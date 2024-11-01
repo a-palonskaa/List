@@ -2,3 +2,5 @@
 logs/images
 logs/images2
 build
+trash.cpp
+.DS_Store
