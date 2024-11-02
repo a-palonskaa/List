@@ -21,6 +21,10 @@ void list_t::set_dump_ostream(FILE* ostream) {
     *get_dump_ostream() = ostream;
 }
 
+bool list_t::close_dump_ostream() {
+    return fclose(*get_dump_ostream()) != EOF;
+}
+
 error_t list_t::dump() {
     FILE* ostream = *get_dump_ostream();
 
@@ -63,8 +67,8 @@ error_t list_t::dump() {
 void list_t::print_list() {
 	size_t current_pos = (size_t) head();
 	for (size_t i = 1; i <= size; i++) {
-		printf("[%zu]: %5d\n", i, cells[current_pos].data);
-		current_pos = cells[current_pos].next;
+		printf("[%zu]: %5d\n", i, nodes[current_pos].data);
+		current_pos = nodes[current_pos].next;
 	}
 }
 
@@ -74,44 +78,42 @@ list_status_t list_t::verify() {
         return SIZE_EXCEED_CAPACITY;
     }
 
-    if (free_cell== 0) {
-        LOG(ERROR, "Free cell is 0\n", size, capacity);
-        return NULL_FREE_CELL;
+    if (free_node== 0) {
+        LOG(ERROR, "Free node is 0\n", size, capacity);
+        return NULL_FREE_node;
     }
 
-    size_t next_free_cell = free_cell;
+    size_t next_free_node = free_node;
     for (size_t i = size; i < capacity; i++) {
-        if ((cells[next_free_cell].next == 0) ||
-            (cells[next_free_cell].prev != PREV_POISON_VALUE)) {
-            LOG(ERROR, "Free cell previous value must be %zd: its prev is %zd, next is %zu\n",
-                   PREV_POISON_VALUE, cells[next_free_cell].prev, cells[next_free_cell].next);
-            return INCORRECT_FREE_CELL;
+        if ((nodes[next_free_node].next == 0) ||
+            (nodes[next_free_node].prev != PREV_POISON_VALUE)) {
+            LOG(ERROR, "Free node previous value must be %zd: its prev is %zd, next is %zu\n",
+                   PREV_POISON_VALUE, nodes[next_free_node].prev, nodes[next_free_node].next);
+            return INCORRECT_FREE_node;
         }
-        next_free_cell = cells[next_free_cell].next;
+        next_free_node = nodes[next_free_node].next;
     }
     return OK;
 }
-
 void list_t::printf_graph_dot_file(FILE* graph_file) {
-      fprintf(graph_file, "digraph G {\n\t"
-                          "rankdir=LR;\n\t"
-                          "bgcolor=\"#DDA0DD\";\n\t"
-                          "splines=true;\n\t"
-                          "node [shape=box, width=1, height=0.5, style=filled, fillcolor=\"#7FFFD4\"];\n\t");
+    fprintf(graph_file, "digraph G {\n\t"
+                        "rankdir=LR;\n\t"
+                        "bgcolor=\"#DDA0DD\";\n\t"
+                        "splines=true;\n\t"
+                        "node [shape=box, width=1, height=0.5, style=filled, fillcolor=\"#7FFFD4\"];\n\t");
 
     fprintf(graph_file, "subgraph cluster_head_tail {\n\t"
                         "color=transparent;\n"
                         "style=invis;\n"
                         "label=\"\";\n"
-                        "head [label=<<table border='0' cellspacing='0' cellpadding='1'>"
+                        "head [label=<<table border='0'>"
                         "<tr><td>head</td></tr></table>>];\n\t"
-                        "tail [label=<<table border='0' cellspacing='0' cellpadding='1'>"
+                        "tail [label=<<table border='0'>"
                         "<tr><td>tail</td></tr></table>>];\n\t"
                         "rank=same;\n"
                         "}\n");
 
     fprintf(graph_file, "head -> tail [weight=1000,color=\"#DDA0DD\"];\n\t");
-
 
     fprintf(graph_file, "subgraph cluster_nodes {\n\t"
                         "color=transparent;\n"
@@ -119,15 +121,10 @@ void list_t::printf_graph_dot_file(FILE* graph_file) {
                         "label=\"\";\n"
                         "rank=same;\n");
 
-    size_t k = 0;
-    size_t used_cells_amount = 0;
-    do {
-        k = cells[k].next;
-        used_cells_amount = (used_cells_amount > k) ? used_cells_amount: k;
-    } while (k != 0);
+    size_t used_nodes_amount = get_used_size();
 
-    for (size_t j = 0; j <= used_cells_amount; j++) {
-        fprintf(graph_file, "node%03zu [label=<<table border='0' cellspacing='0' cellpadding='1'>"
+    for (size_t j = 0; j <= used_nodes_amount; j++) {
+        fprintf(graph_file, "node%03zu [label=<<table border='0'>"
                             "<tr><td>%03zu</td></tr>"
                             "<tr><td bgcolor='black' height='1'></td></tr>"
                             "<tr><td>data = " ELEM_T_PRINTF "</td></tr>"
@@ -136,10 +133,10 @@ void list_t::printf_graph_dot_file(FILE* graph_file) {
                             "<tr><td bgcolor='black' height='1'></td></tr>"
                             "<tr><td>prev = %zd</td></tr></table>>];\n\t"
                             "rank=same;\n",
-                            j, j, cells[j].data, cells[j].next, cells[j].prev);
+                            j, j, nodes[j].data, nodes[j].next, nodes[j].prev);
     }
 
-    for (size_t i = 0; i < used_cells_amount; i++) {
+    for (size_t i = 0; i < used_nodes_amount; i++) {
         fprintf(graph_file, "node%03zu -> node%03zu [weight=1000,color=\"#DDA0DD\"];\n\t", i, i + 1);
         fprintf(graph_file, "node%03zu -> node%03zu;\n\t", i, i + 1);
     }
@@ -147,8 +144,8 @@ void list_t::printf_graph_dot_file(FILE* graph_file) {
     fprintf(graph_file, "}\n");
 
     for (size_t i = 1, begin = tail(); i <= size; i++) {
-        fprintf(graph_file, "node%03zu -> node%03zu [color=red];\n\t", begin, cells[begin].next);
-        begin = cells[begin].next;
+        fprintf(graph_file, "node%03zu -> node%03zu [color=red];\n\t", begin, nodes[begin].next);
+        begin = nodes[begin].next;
     }
 
     fprintf(graph_file, "head -> node%03zu [color=blue];\n\t", head());
@@ -156,3 +153,4 @@ void list_t::printf_graph_dot_file(FILE* graph_file) {
 
     fprintf(graph_file, "node000 -> node000 [label=\"self-loop\" tailport=s headport=s];\n\t}");
 }
+

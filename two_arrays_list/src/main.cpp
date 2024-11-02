@@ -7,7 +7,7 @@
 #include "logger.h"
 #include "list.h"
 
-const char* LOGGER_FILE = "./logs/logger.html";
+const char* LOGGER_FILE = "logs/logger.html";
 
 signed int compare_ints(void* elem1, void* elem2);
 
@@ -31,11 +31,16 @@ int main() {
     list.insert_after(1, 2);
     list.dump();
 
-    list.insert_after(2, 3);
+    list.insert_after(1, 3);
     list.dump();
 
-
     list.push_front(100);
+    list.dump();
+
+    list.push_front(1000);
+    list.dump();
+
+    list.pop_front();
     list.dump();
 
     fclose(ostream);

@@ -31,6 +31,8 @@ void list_replace(list_t* old_entry, list_t* new_entry);
 
 //=======================================================================================
 
+bool is_list_empty(list_t* head);
+
 void print_list(list_t* head, void (*printer)(list_t* anchor));
 
 #endif /* INTRUSIVE_LIST_H */

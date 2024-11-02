@@ -132,7 +132,7 @@ list_status_t list_t::pop_front() {
 }
 
 list_status_t list_t::pop_back() {
-	return delete_at(size);
+	return delete_at(head());
 }
 
 //=============================================================================================

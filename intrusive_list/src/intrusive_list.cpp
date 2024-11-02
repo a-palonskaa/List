@@ -1,9 +1,9 @@
-#include "intrusive_list.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "intrusive_list.h"
 
-// -------- NAMING moment --------------------------------
+// -------- NAMING moment -------------------------------
 // __func_name - static func
 // _name_func - here is a macros with similar fucn & name
 
@@ -13,6 +13,8 @@ static void inline __list_del(list_t* prev, list_t* next);
 //=======================================================================================
 
 void _HEAD_INIT(list_t* head) {
+    assert(head != nullptr);
+
     head->next = head;
     head->prev = head;
 }
@@ -65,6 +67,15 @@ void list_replace(list_t* old_entry, list_t* new_entry) {
     new_entry->prev = old_entry->prev;
     old_entry->prev->next = new_entry;
     old_entry->next->prev = new_entry;
+}
+
+
+//=======================================================================================
+
+bool is_list_empty(list_t* head) {
+    assert(head != nullptr);
+
+    return head == head_next;
 }
 
 //=======================================================================================

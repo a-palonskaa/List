@@ -16,16 +16,16 @@ typedef enum {
 	LIST_IS_FULL           = 2,
 	INDEX_EXCEED_LIST_SIZE = 3,
 	NULL_INDEX             = 4,
-	INCORRECT_FREE_CELL    = 5,
+	INCORRECT_FREE_node    = 5,
 	SIZE_EXCEED_CAPACITY   = 6,
-	NULL_FREE_CELL         = 7,
+	NULL_FREE_node         = 7,
 } list_status_t;
 
 typedef struct {
 	elem_t data;
 	size_t next;
-	size_t prev;
-} list_cell_t;
+	ssize_t prev;
+} list_node_t;
 
 typedef enum {
     NO_ERRORS            = 0,
@@ -47,6 +47,7 @@ public:
 
 	list_status_t verify();
 	void set_dump_ostream(FILE* ostream);
+	bool close_dump_ostream();
 	error_t dump();
 	void print_list();
 
@@ -71,11 +72,21 @@ public:
 	size_t find_elem_by_value(elem_t elm, compare_t compare);
 	size_t find_elem_by_index(size_t index);
 private:
-	void printf_graph_dot_file(FILE* graph_file);
+	void initialize_nodes();
+
+	list_status_t delete_data_validation(size_t anchor);
 	list_status_t insert_data_validation(size_t anchor);
-	void initialize_cells();
-	list_cell_t* cells;
-	size_t free_cell;
+
+	void printf_graph_dot_file(FILE* graph_file);
+
+	size_t get_used_size();
+	bool expand_if_full();
+	bool resize_up();
+	bool compress_if_underused();
+	bool resize_down();
+
+	list_node_t* nodes;
+	size_t free_node;
 
 	size_t size;
 	size_t capacity;
